@@ -1,0 +1,10 @@
+.btnOuter {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.imgOuter {
+  display: flex;
+  justify-content: center;
+}

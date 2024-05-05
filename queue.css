@@ -1,0 +1,18 @@
+#bulkOuter {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+#bulkOuter textarea {
+  min-height: 100px;
+}
+
+#bulkButtons {
+  display: flex;
+  gap: 0.5em;
+}
+
+#bulkButtons button:first-of-type {
+  margin-right: auto;
+}

@@ -1,0 +1,23 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          zip -q -j extension-chrome.zip manifest.json *.html *.js *.css icon*.png loader*.png
+          cp manifest-firefox.json manifest.json
+          zip -q -j extension-firefox.zip manifest.json *.html *.js *.css icon*.png loader*.png
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: "${{ github.ref_name }}"
+          omitName: true
+          makeLatest: true
+          allowUpdates: true
+          artifacts: "*.zip"

@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>PageSponge: Queue</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="queue.css" />
+  </head>
+  <body>
+    <h1>PageSponge: Queue</h1>
+    <div id="bulkOuter">
+      <p>
+        The queue is a method of sponging URLs, rather than visiting each URL
+        individually. Input one or more URLs below and press the Bulk Add button
+        to begin. It will open a new tab for each URL, wait for the page to
+        finish loading, and save the results. If the tab is closed, errors, or
+        timeouts [after 60 seconds] then it will retry up to 3 times.
+      </p>
+      <textarea
+        id="bulkText"
+        placeholder="Input one or more fully-qualified URLs to sponge in a series of new tabs."
+      ></textarea>
+      <div id="bulkButtons">
+        <button id="bulkAdd">Bulk Add</button>
+        <button id="resetFailAll">Reset Fails</button>
+        <button id="removeComplete">Remove Complete</button>
+        <button id="removeAll">Remove All</button>
+      </div>
+      <table id="queueList" width="100%" border="1">
+        <thead>
+          <tr>
+            <th width="1">Status</th>
+            <th>URL</th>
+            <th width="1">Fails</th>
+            <th>Reason</th>
+            <th width="1"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <script type="text/javascript" src="queue.js"></script>
+  </body>
+</html>

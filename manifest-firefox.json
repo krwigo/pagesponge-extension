@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "PageSponge",
+  "homepage_url": "https://pagesponge.com",
+  "description": "The extension saves text from the active tab to achieve the primary functionality of recalling the url where the text was found.",
+  "version": "1.0.5",
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "action": {
+    "default_title": "PageSponge",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["scripting", "storage", "webRequest", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["service.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "pagesponge@pagesponge.com"
+    }
+  },
+  "omnibox": {
+    "keyword": "sponge"
+  }
+}
