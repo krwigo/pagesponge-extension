@@ -47,9 +47,10 @@ document.querySelector("#bulkAdd").addEventListener("click", (ev) => {
       const textEl = document.querySelector("#bulkText");
       const urls = Array.from(textEl.value.matchAll(/\w+:\/\/[^\r\n]+/g))
         .map((v) => v?.[0])
-        .filter((v) => !!v)
+        .filter((v) => v?.trim)
+        .map((v) => v.trim())
         .filter((v) => URL.canParse(v))
-        .map((v) => v.trim());
+        .map((v) => new URL(v).toString());
       if (urls?.length) {
         chrome.runtime
           .sendMessage({ cmd: "bulkAdd", urls })

@@ -147,10 +147,15 @@ function jobExtractText(job) {
       .then(function (tab) {
         _tabId = tab?.id;
         chrome.runtime.onMessage.addListener(onMessage);
-        chrome.webRequest.onHeadersReceived.addListener(onHeaders, {
-          urls: [job?.url],
-          tabId: _tabId,
-        });
+        try {
+          let _url = new URL(job?.url).toString();
+          chrome.webRequest.onHeadersReceived.addListener(onHeaders, {
+            urls: [_url],
+            tabId: _tabId,
+          });
+        } catch (err) {
+          console.warn(err);
+        }
         chrome.tabs.onUpdated.addListener(onUpdated);
         chrome.tabs.onRemoved.addListener(onRemoved);
         setTimeout(onTimeout, queueTimeout);
