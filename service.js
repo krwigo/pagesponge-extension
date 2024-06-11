@@ -25,21 +25,35 @@ const maxRetries = 3; // max number of automatic job retries.
 const maxConcurrency = 3; // max number of concurrent jobs.
 const denyNodeNames = ["NOSCRIPT", "SCRIPT", "STYLE"]; // exract text ignored nodes.
 
+// Logging:
+//
+function sendLog(details) {
+  fetch("https://pagesponge.com/api/log", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ manifest: gManifest, details }),
+  }).then(
+    (e) => console.log("sendLog.then", e),
+    (e) => console.warn("sendLog.catch", e),
+  );
+}
+
+self.addEventListener("error", function (e) {
+  console.error(e, e?.filename, e?.lineno, e?.colno, e?.message);
+  sendLog({
+    cmd: "error",
+    error: String(e),
+    filename: e?.filename,
+    lineno: e?.lineno,
+    colno: e?.colno,
+    message: e?.message,
+  });
+});
+
 // Globals:
 //
 const gManifest = {};
-
-chrome.management.getSelf(function (info) {
-  Object.assign(
-    gManifest,
-    { isDev: ["development", "sideload"].includes(info?.installType) },
-    // { version: info?.version },
-    // info,
-  );
-  console.log("gManifest:", gManifest);
-  // wakeup (boot)
-  setTimeout(gController.apply, wakeDelay);
-});
 
 // Helpers:
 //
@@ -90,8 +104,8 @@ function jobExtractText(job) {
       }
     }
     function onHeaders(details) {
-      if (/^[45]/.test(details?.statusCode)) {
-        console.log("jobExtractText.onHeaders:", details);
+      console.log("jobExtractText.onHeaders:", details);
+      if (details?.tabId == _tabId && /^[45]/.test(details?.statusCode)) {
         destroy();
         reject({
           cmd: "extractFailure",
@@ -101,7 +115,7 @@ function jobExtractText(job) {
       }
     }
     function onUpdated(tabId, changeInfo, tab) {
-      console.log("jobExtractText.onUpdated:", { changeInfo });
+      console.log("jobExtractText.onUpdated:", { tabId, changeInfo });
       if (tabId == _tabId && changeInfo?.status == "complete") {
         console.log("jobExtractText.executeScript()");
         chrome.scripting
@@ -112,10 +126,14 @@ function jobExtractText(job) {
               { cmd: "queueText", uuid: job?.uuid, textDelay, denyNodeNames },
             ],
           })
-          .then(console.log, console.warn);
+          .then(
+            (e) => console.log("onUpdated.executeScript.then", e),
+            (e) => console.warn("onUpdated.executeScript.catch", e),
+          );
       }
     }
     function onRemoved(tabId, removeInfo) {
+      console.log("jobExtractText.onRemoved:", { tabId, removeInfo });
       if (tabId == _tabId) {
         destroy();
         reject({
@@ -126,6 +144,7 @@ function jobExtractText(job) {
       }
     }
     function onTimeout(tabId) {
+      console.log("jobExtractText.onTimeout:", { tabId });
       if (tabId == _tabId) {
         destroy();
         reject({
@@ -140,8 +159,17 @@ function jobExtractText(job) {
       chrome.webRequest.onHeadersReceived.removeListener(onHeaders);
       chrome.tabs.onUpdated.removeListener(onUpdated);
       chrome.tabs.onRemoved.removeListener(onRemoved);
-      chrome.tabs.remove(_tabId).then(console.log, console.warn);
+      chrome.tabs.remove(_tabId).then(
+        (e) => console.log("tabs.remove.then", e),
+        (e) => console.warn("tabs.remove.catch", e),
+      );
     }
+    // issue: log the url to determine process failures
+    sendLog({
+      cmd: "tabs.create",
+      url: job?.url,
+    });
+    // create tab for text extraction
     chrome.tabs
       .create({ url: job?.url, active: false })
       .then(function (tab) {
@@ -242,6 +270,7 @@ const gController = (function () {
       if (!Array.isArray(queue)) queue = [];
       // filter old jobs without a uuid
       queue = queue.filter((job) => job?.uuid);
+      console.log("queue.length:", queue.length);
       // process storage changes
       let change;
       while ((change = changes.shift())) {
@@ -294,6 +323,8 @@ const gController = (function () {
             job.status = change?.cmd;
             job.status = "complete";
             job.dateCompleted = Date.now();
+            // reduce memory by removing text
+            job.text = "";
           }
         } else if (change?.cmd == "uploadFailure") {
           let job = queue.find((obj) => obj?.uuid == change?.uuid);
@@ -302,6 +333,11 @@ const gController = (function () {
             job.fails += 1;
             job.failReason = "upload failure";
             job.status = change?.cmd;
+          }
+        } else if (change?.cmd == "setStatus") {
+          let job = queue.find((obj) => obj?.uuid == change?.uuid);
+          if (job) {
+            job.status = change?.status;
           }
         } else if (change?.cmd == "queueRemoveUUID") {
           queue = queue.filter((job) => job?.uuid != change?.uuid);
@@ -317,6 +353,8 @@ const gController = (function () {
               job.status = "initial";
             }
           }
+        } else if (change?.cmd == "queueText") {
+          // nop
         } else if (change) {
           console.warn("unknownChange:", change);
         }
@@ -342,6 +380,11 @@ const gController = (function () {
           }
           console.log("gController.job:", job?.uuid, !!job?.text, job);
           if (!job?.text) {
+            gController.push({
+              cmd: "setStatus",
+              uuid: job?.uuid,
+              status: "extractingText",
+            });
             // create tab and extract text
             promises[job?.uuid] = jobExtractText(job)
               .then(function (r) {
@@ -357,6 +400,11 @@ const gController = (function () {
             continue;
           }
           if (job?.text) {
+            gController.push({
+              cmd: "setStatus",
+              uuid: job?.uuid,
+              status: "uploadingText",
+            });
             // upload text
             promises[job?.uuid] = jobUploadText(job)
               .then(function (r) {
@@ -382,6 +430,7 @@ const gController = (function () {
   function push(change) {
     console.log("gController.push:", change);
     apply(changes.push(change));
+    console.log("changes.length:", changes.length);
   }
   return { apply, push };
 })();
@@ -398,7 +447,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         func: pageTextFunc,
         args: [{ cmd: "spongeText", textDelay, denyNodeNames }],
       })
-      .then(console.log, console.warn);
+      .then(
+        (e) => console.log("onMessage.executeScript.then", e),
+        (e) => console.warn("onMessage.executeScript.catch", e),
+      );
   } else {
     gController.push(message);
   }
@@ -412,4 +464,18 @@ chrome.omnibox.setDefaultSuggestion({
 
 chrome.omnibox.onInputEntered.addListener(function (text, disposition) {
   chrome.tabs.update({ url: `https://pagesponge.com/?q=${text}` });
+});
+
+// Globals: (delayed)
+//
+chrome.management.getSelf(function (info) {
+  Object.assign(
+    gManifest,
+    { isDev: ["development", "sideload"].includes(info?.installType) },
+    // { version: info?.version },
+    // info,
+  );
+  console.log("gManifest:", gManifest);
+  // wakeup (boot)
+  setTimeout(gController.apply, wakeDelay);
 });

@@ -16,3 +16,39 @@
 #bulkButtons button:first-of-type {
   margin-right: auto;
 }
+
+#queueList {
+  width: 100%;
+}
+
+#queueList .complete td:nth-child(1) {
+  color: green;
+}
+
+#queueList .extractSuccess td:nth-child(1),
+#queueList .uploadSuccess td:nth-child(1) {
+  color: purple;
+}
+
+#queueList .extractingText td:nth-child(1),
+#queueList .uploadingText td:nth-child(1) {
+  color: blue;
+}
+
+#queueList .uploadFailure td:nth-child(1),
+#queueList .extractFailure td:nth-child(1) {
+  color: red;
+}
+
+#queueList div {
+  overflow: hidden;
+  max-height: 1.1em;
+}
+
+#queueList div a {
+  overflow-wrap: anywhere;
+}
+
+#queueList td:nth-child(4) {
+  white-space: nowrap;
+}

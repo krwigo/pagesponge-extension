@@ -4,18 +4,22 @@ function queueRefresh(queue) {
   listEl.replaceChildren();
   for (const job of queue) {
     let tr = document.createElement("TR");
+    tr.classList.add(job?.status || "s");
     let status = document.createElement("TD");
     status.textContent = job?.status;
     let url = document.createElement("TD");
+    let div = document.createElement("DIV");
     let a = document.createElement("A");
     a.textContent = job?.url;
     a.target = "_blank";
     a.rel = "noreferrer";
     a.href = job?.url;
-    url.appendChild(a);
+    div.appendChild(a);
+    url.appendChild(div);
     let fails = document.createElement("TD");
-    if (job?.status != "complete") fails.textContent = job?.fails || 0;
+    if (job?.status != "complete") fails.textContent = job?.fails || "";
     let reason = document.createElement("TD");
+    reason.classList.add("reason");
     if (job?.status != "complete") reason.textContent = job?.failReason;
     let actions = document.createElement("TD");
     actions.textContent = null;
