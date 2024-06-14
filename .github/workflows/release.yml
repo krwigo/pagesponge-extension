@@ -21,3 +21,4 @@ jobs:
           makeLatest: true
           allowUpdates: true
           artifacts: "*.zip"
+          removeArtifacts: true
