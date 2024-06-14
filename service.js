@@ -96,11 +96,19 @@ function jobExtractText(job) {
       console.log("jobExtractText.onMessage:", { message, sender });
       if (sender?.tab?.id == _tabId && message?.cmd == "queueText") {
         destroy();
-        resolve({
-          cmd: "extractSuccess",
-          uuid: job?.uuid,
-          text: message?.text,
-        });
+        if (message?.text) {
+          resolve({
+            cmd: "extractSuccess",
+            uuid: job?.uuid,
+            text: message?.text,
+          });
+        } else {
+          reject({
+            cmd: "extractFailure",
+            uuid: job?.uuid,
+            result: `page text was empty`,
+          });
+        }
       }
     }
     function onHeaders(details) {
