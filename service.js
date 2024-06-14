@@ -91,7 +91,7 @@ function pageTextFunc({ cmd, uuid, url, textDelay, denyNodeNames }) {
 //
 function jobExtractText(job) {
   return new Promise(function (resolve, reject) {
-    let _tabId;
+    let _tabId, timerId;
     function onMessage(message, sender, sendResponse) {
       console.log("jobExtractText.onMessage:", { message, sender });
       if (sender?.tab?.id == _tabId && message?.cmd == "queueText") {
@@ -171,6 +171,7 @@ function jobExtractText(job) {
         (e) => console.log("tabs.remove.then", e),
         (e) => console.warn("tabs.remove.catch", e),
       );
+      if (timerId) timerId = clearTimeout(timerId);
     }
     // issue: log the url to determine process failures
     sendLog({
@@ -194,7 +195,7 @@ function jobExtractText(job) {
         }
         chrome.tabs.onUpdated.addListener(onUpdated);
         chrome.tabs.onRemoved.addListener(onRemoved);
-        setTimeout(onTimeout, queueTimeout);
+        timerId = setTimeout(onTimeout, queueTimeout);
       })
       .catch(function (e) {
         destroy();
