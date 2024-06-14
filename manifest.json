@@ -3,7 +3,7 @@
   "name": "PageSponge",
   "homepage_url": "https://pagesponge.com",
   "description": "The extension saves text from the active tab to achieve the primary functionality of recalling the url where the text was found.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "icons": {
     "128": "icon-128.png"
   },
