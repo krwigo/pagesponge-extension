@@ -263,6 +263,7 @@ const gController = (function () {
   function apply() {
     if (busy) return;
     busy = true;
+    console.log("gController.apply:", changes.length);
     // load from storage
     chrome.storage.local.get(["queue"]).then(function ({ queue }) {
       console.log("gController.load:", queue);
@@ -274,7 +275,7 @@ const gController = (function () {
       // process storage changes
       let change;
       while ((change = changes.shift())) {
-        console.log("gController.apply:", change);
+        console.log("gController.change:", change);
         if (change?.cmd == "spongeText") {
           queue.push({
             uuid: uuid(),
@@ -430,7 +431,6 @@ const gController = (function () {
   function push(change) {
     console.log("gController.push:", change);
     apply(changes.push(change));
-    console.log("changes.length:", changes.length);
   }
   return { apply, push };
 })();
